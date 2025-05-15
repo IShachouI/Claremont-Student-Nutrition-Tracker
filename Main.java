@@ -2,27 +2,63 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Student Nutrition Tracker Main Application
+ * 
+ * This class provides a console interface for students to:
+ * - Log meals from Pomona dining hall menus
+ * - Track daily nutrition
+ * - Get meal recommendations based on calorie goals
+ * - Share nutrition logs with friends
+ * 
+ * Dependencies: MenuItem.java, DiningHallMenuLoader.java, PomonaDiningHalls.csv
+ * 
+ * @author Yaseen Osman
+ */
 public class Main {
-    // User nutrition log: Map<studentId, Map<date, NutritionFacts>>
+
+    /**
+     * NutritionFacts stores daily nutrition totals for a user.
+     */
     static class NutritionFacts {
         double calories = 0, fat = 0, carbs = 0, protein = 0;
+
+        /**
+         * Adds the nutrition from a MenuItem to the current totals.
+         * @param item The MenuItem to add.
+         */
         public void add(MenuItem item) {
             calories += item.calories;
             fat += item.fat;
             carbs += item.carbs;
             protein += item.protein;
         }
+
+        /**
+         * Returns a string summary of the nutrition facts.
+         * @return String summary.
+         */
         public String toString() {
-            return String.format("Calories: %.1f, at: %.1fg, Carbs: %.1fg, Protein: %.1fg",
+            return String.format("Calories: %.1f, Fat: %.1fg, Carbs: %.1fg, Protein: %.1fg",
                     calories, fat, carbs, protein);
         }
     }
 
+    /**
+     * User stores profile, calorie goal, friends, and daily nutrition logs.
+     */
     static class User {
         String id, name;
         double calorieGoal;
         Set<String> friends = new HashSet<>();
         Map<String, NutritionFacts> logs = new HashMap<>(); // date -> NutritionFacts
+
+        /**
+         * Constructs a new User.
+         * @param id Student ID
+         * @param name Name
+         * @param calorieGoal Daily calorie goal
+         */
         public User(String id, String name, double calorieGoal) {
             this.id = id;
             this.name = name;
@@ -30,12 +66,17 @@ public class Main {
         }
     }
 
+    /**
+     * Main entry point for the Student Nutrition Tracker.
+     * @param args Command-line arguments (not used)
+     * @throws Exception if file loading fails
+     */
     public static void main(String[] args) throws Exception {
-        // Load menu
+        //Load menu from CSV file using helper class
         String filename = "PomonaDiningHalls.csv";
         HashMap<String, HashMap<String, List<MenuItem>>> menu = DiningHallMenuLoader.loadMenu(filename);
 
-        // Sample users - If you want to add more users, you put it here
+        //Sample users; add more users here as needed
         Map<String, User> users = new HashMap<>();
         User alice = new User("1001", "Alice", 2000);
         User bob = new User("1002", "Bob", 2200);
@@ -54,6 +95,7 @@ public class Main {
         }
         User user = users.get(studentId);
 
+        //Main menu loop
         while (true) {
             System.out.println("\nOptions:");
             System.out.println("1. Log a meal");
@@ -65,10 +107,10 @@ public class Main {
             String choice = sc.nextLine().trim();
 
             if (choice.equals("1")) {
-                //System.out.print("Enter date (YYYY-MM-DD): ");
-    
+                //Log a meal for today's date
                 String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                // List dining halls
+
+                //List available dining halls
                 List<String> halls = new ArrayList<>(menu.keySet());
                 Collections.sort(halls);
                 for (int i = 0; i < halls.size(); i++)
@@ -81,7 +123,7 @@ public class Main {
                 }
                 String hall = halls.get(dhIdx);
 
-                // List meal periods
+                //List available meal periods for the selected dining hall
                 List<String> meals = new ArrayList<>(menu.get(hall).keySet());
                 Collections.sort(meals);
                 for (int i = 0; i < meals.size(); i++)
@@ -94,7 +136,7 @@ public class Main {
                 }
                 String meal = meals.get(mealIdx);
 
-                // List dishes
+                //List dishes for the selected meal period
                 List<MenuItem> items = menu.get(hall).get(meal);
                 for (int i = 0; i < items.size(); i++)
                     System.out.printf("%d. %s\n", i + 1, items.get(i));
@@ -106,25 +148,27 @@ public class Main {
                 }
                 MenuItem item = items.get(dishIdx);
 
-                // Log meal
+                //Log the selected meal for the user on the current date
                 user.logs.putIfAbsent(date, new NutritionFacts());
                 user.logs.get(date).add(item);
                 System.out.println("Logged: " + item.dish + " for " + date);
             }
             else if (choice.equals("2")) {
-               // System.out.print("Enter date (YYYY-MM-DD): ");
-                String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));;
+                //View today's nutrition summary
+                String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 NutritionFacts nf = user.logs.getOrDefault(date, new NutritionFacts());
                 System.out.println("Nutrition for " + date + ": " + nf);
                 System.out.println("Your calorie goal: " + user.calorieGoal);
             }
             else if (choice.equals("3")) {
-                //System.out.print("Enter date (YYYY-MM-DD): ");
+                //Get a meal recommendation based on remaining calories
                 String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 double remaining = user.calorieGoal - user.logs.getOrDefault(date, new NutritionFacts()).calories;
                 MenuItem best = null;
                 String bestHall = "", bestMeal = "";
                 double minDiff = Double.MAX_VALUE;
+
+                //Iterate through all menu items to find the closest calorie match
                 for (String hall : menu.keySet()) {
                     for (String meal : menu.get(hall).keySet()) {
                         for (MenuItem item : menu.get(hall).get(meal)) {
@@ -146,9 +190,8 @@ public class Main {
                 }
             }
             else if (choice.equals("4")) {
-                //System.out.print("Enter date (YYYY-MM-DD): ");
+                //Share today's nutrition log with friends
                 String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
                 NutritionFacts nf = user.logs.getOrDefault(date, new NutritionFacts());
                 String summary = user.name + "'s nutrition on " + date + ": " + nf;
                 for (String fid : user.friends) {
@@ -158,6 +201,7 @@ public class Main {
                 }
             }
             else if (choice.equals("5")) {
+                //Exit the application
                 System.out.println("Goodbye!");
                 break;
             }
