@@ -35,7 +35,7 @@ public class Main {
         String filename = "PomonaDiningHalls.csv";
         HashMap<String, HashMap<String, List<MenuItem>>> menu = DiningHallMenuLoader.loadMenu(filename);
 
-        // Sample users
+        // Sample users - If you want to add more users, you put it here
         Map<String, User> users = new HashMap<>();
         User alice = new User("1001", "Alice", 2000);
         User bob = new User("1002", "Bob", 2200);
